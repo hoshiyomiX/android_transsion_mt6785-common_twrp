@@ -102,3 +102,8 @@ RECOVERY_LIBRARY_SOURCE_FILES += \
     $(TARGET_OUT_SHARED_LIBRARIES)/libkmsetkey.so \
     $(TARGET_OUT_SHARED_LIBRARIES)/libhardware_legacy.so \
     $(TARGET_OUT_SHARED_LIBRARIES)/libpuresoftkeymasterdevice.so
+
+# [DEBUG] Trace INTERNAL_KERNEL_CMDLINE for twrpfastboot=1 filter-out
+$(info [FOX-DEBUG] common.mk START: INTERNAL_KERNEL_CMDLINE="$(INTERNAL_KERNEL_CMDLINE)")
+INTERNAL_KERNEL_CMDLINE := $(filter-out twrpfastboot=1,$(INTERNAL_KERNEL_CMDLINE))
+$(info [FOX-DEBUG] common.mk AFTER filter-out: INTERNAL_KERNEL_CMDLINE="$(INTERNAL_KERNEL_CMDLINE)")
