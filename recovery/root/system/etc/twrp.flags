@@ -5,6 +5,12 @@
 #<mnt_point>             <type>    <device>                                                        <mnt_flags and options>
 # User writeable partitions
 /boot                     emmc     /dev/block/platform/bootdevice/by-name/boot                     flags=slotselect;backup;flashimg
+# Super Partitions (dynamic partitions — backup + flash individual logical volumes)
+/system                   ext4     /dev/block/mapper/system                                        flags=display="System";slotselect;backup;flashimg;logical
+/system_ext               ext4     /dev/block/mapper/system_ext                                    flags=display="System Ext";slotselect;backup;flashimg;logical
+/vendor                   ext4     /dev/block/mapper/vendor                                        flags=display="Vendor";slotselect;backup;flashimg;logical
+/product                  ext4     /dev/block/mapper/product                                       flags=display="Product";slotselect;backup;flashimg;logical
+
 /vendor_boot              emmc     /dev/block/platform/bootdevice/by-name/vendor_boot              flags=display="Vendor Boot";slotselect;backup;flashimg
 /vbmeta                   emmc     /dev/block/platform/bootdevice/by-name/vbmeta                   flags=display="Vbmeta";slotselect;backup;flashimg
 /vbmeta_vendor            emmc     /dev/block/platform/bootdevice/by-name/vbmeta_vendor            flags=display="Vbmeta_vendor";slotselect;backup;flashimg
