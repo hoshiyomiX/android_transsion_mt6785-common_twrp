@@ -102,10 +102,3 @@ RECOVERY_LIBRARY_SOURCE_FILES += \
     $(TARGET_OUT_SHARED_LIBRARIES)/libkmsetkey.so \
     $(TARGET_OUT_SHARED_LIBRARIES)/libhardware_legacy.so \
     $(TARGET_OUT_SHARED_LIBRARIES)/libpuresoftkeymasterdevice.so
-
-# Filter-out twrpfastboot=1 from INTERNAL_KERNEL_CMDLINE
-# This runs in product loading phase (AFTER BoardConfigTWRP.mk adds twrpfastboot=1)
-# Combined with force_normal_boot=1 removal from BOARD_KERNEL_CMDLINE,
-# the final cmdline will be: bootopt=64S3,32N2,64N2 buildvariant=eng
-# LK sets force_normal_boot=1 dynamically (normal boot → Android, key combo → Recovery)
-INTERNAL_KERNEL_CMDLINE := $(filter-out twrpfastboot=1,$(INTERNAL_KERNEL_CMDLINE))
