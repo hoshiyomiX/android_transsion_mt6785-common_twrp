@@ -77,12 +77,13 @@ BOARD_AVB_RECOVERY_ADD_HASH_FOOTER_ARGS += \
 
 # Partitions
 BOARD_FLASH_BLOCK_SIZE := 131072
-BOARD_BOOTIMAGE_PARTITION_SIZE := 33554432
+# Device-specific partition sizes (moved to device BoardConfig.mk):
+#   BOARD_BOOTIMAGE_PARTITION_SIZE
+#   BOARD_SUPER_PARTITION_SIZE
+#   BOARD_MAIN_SIZE
 BOARD_USES_METADATA_PARTITION := true
 BOARD_ROOT_EXTRA_FOLDERS += metadata
-BOARD_SUPER_PARTITION_SIZE := 8663334912
 BOARD_SUPER_PARTITION_GROUPS := main
-BOARD_MAIN_SIZE := 8659103744
 BOARD_MAIN_PARTITION_LIST := \
       system \
       system_ext \
@@ -164,8 +165,9 @@ TW_THEME := portrait_hdpi
 TW_DEFAULT_LANGUAGE := en
 TW_EXTRA_LANGUAGES := false
 TW_BRIGHTNESS_PATH := "/sys/class/leds/lcd-backlight/brightness"
-TW_DEFAULT_BRIGHTNESS := 1200
-TW_MAX_BRIGHTNESS := 2460
+# Device-specific display config (moved to device BoardConfig.mk):
+#   TW_DEFAULT_BRIGHTNESS
+#   TW_MAX_BRIGHTNESS
 TW_FRAMERATE := 60
 TW_NO_SCREEN_BLANK := true
 TW_NO_USB_STORAGE := true
@@ -182,15 +184,16 @@ TW_USE_MODEL_HARDWARE_ID_FOR_DEVICE_ID := true
 
 # Other Config
 TARGET_USE_CUSTOM_LUN_FILE_PATH := /config/usb_gadget/g1/functions/mass_storage.usb0/lun.%d/file
-TARGET_SCREEN_HEIGHT := 2460
+# Device-specific screen height (moved to device BoardConfig.mk):
+#   TARGET_SCREEN_HEIGHT
 TARGET_USES_LOGD := true
 TWRP_INCLUDE_LOGCAT := true
 
-# StatusBar
-TW_STATUS_ICONS_ALIGN := center
-TW_CUSTOM_CPU_POS := "245"
-TW_CUSTOM_CLOCK_POS := "70"
-TW_CUSTOM_BATTERY_POS := "790"
+# StatusBar (device-specific, moved to device BoardConfig.mk):
+#   TW_STATUS_ICONS_ALIGN
+#   TW_CUSTOM_CPU_POS
+#   TW_CUSTOM_CLOCK_POS
+#   TW_CUSTOM_BATTERY_POS
 
 # For building with minimal manifest & Build Hacks
 ALLOW_MISSING_DEPENDENCIES := true
