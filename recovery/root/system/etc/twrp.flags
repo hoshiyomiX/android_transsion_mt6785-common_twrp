@@ -5,45 +5,47 @@
 #<mnt_point>             <type>    <device>                                                        <mnt_flags and options>
 # User writeable partitions
 /boot                     emmc     /dev/block/platform/bootdevice/by-name/boot                     flags=slotselect;backup;flashimg
-# Super Partitions (dynamic partitions — individual logical volume backup)
-# R10 fix: User wants individual logical partitions (system, system_ext, vendor,
-# product) to appear as backupable in Backup menu — NOT whole super.img.
+# Super Partitions (dynamic partitions)
+# R11 fix: Correct pattern for individual logical partition backup.
 #
-# ROOT CAUSE (R9 was wrong — analysis incomplete):
-# TWRP/OrangeFox Prepare_Super_Volume() in partitionmanager.cpp runs AFTER
-# Process_Fstab_Line + Process_TW_Flags. It explicitly calls:
-#   twrpPart->Set_Can_Be_Backed_Up(false);
-#   twrpPart->Set_Can_Be_Wiped(false);
-# for EVERY partition with Is_Super=true (i.e., 'logical' flag set).
-# This OVERRIDES the 'backup' flag — so 'backup' alone does NOT make logical
-# partitions appear in backup menu. R9 incorrectly claimed it did.
+# ROOT CAUSE (R8-R10 were wrong):
+# TWRP Prepare_Super_Volume() calls Set_Can_Be_Backed_Up(false) for ALL
+# partitions with Is_Super=true (logical flag). This OVERRIDES backup flag.
+# R10 advbackup was rejected by user — other device trees don't use it.
 #
-# SOLUTION (R10): Use OrangeFox's 'advbackup' flag.
-# OrangeFox has a custom Can_Be_Adv_Backed_Up property (set via 'advbackup'
-# fstab flag). The backup list filter in partitionmanager.cpp Get_Partition_List:
-#   if ((Can_Be_Backed_Up || (Can_Be_Adv_Backed_Up && fox_adv_backup != 0))
-#       && !Is_SubPartition && Is_Present)
-# So with 'advbackup' flag + fox_adv_backup setting enabled, logical partitions
-# appear in backup menu despite Can_Be_Backed_Up being false.
+# CORRECT SOLUTION (R11): Use separate *_image entries WITHOUT logical flag.
+# Pattern from twrp_tree_rock (working device tree):
+#   /system       ext4  mapper/system     flags=backup=0;logical  (mount only)
+#   /system_image emmc  mapper/system_a   flags=backup=1;flashimg (backup+flash)
 #
-# User must enable in Settings → "Show additional partition to backup"
-# (fox_adv_backup variable, default 0, persist=1). Once enabled, the 4 logical
-# partitions will appear individually in Backup menu as tar backup entries.
+# How it works:
+#   1. Logical partitions (/system, /vendor, etc.) have 'logical' flag →
+#      Is_Super=true → Prepare_Super_Volume sets Can_Be_Backed_Up=false.
+#      backup=0 confirms they're for MOUNTING only, not backup.
+#   2. *_image partitions (/system_image, /vendor_image, etc.) do NOT have
+#      'logical' flag → Is_Super=false → Prepare_Super_Volume NOT called.
+#      Mount_Point check in partition.cpp sets Can_Be_Backed_Up=true for
+#      /system_image and /vendor_image. backup=1 + flashimg=1 enables
+#      backup + flash. These are emmc (dd) backup, not tar.
 #
-# The 'backup' flag is kept for compatibility (harmless — gets overridden by
-# Prepare_Super_Volume, but doesn't hurt). The 'advbackup' flag is the actual
-# mechanism that makes them appear.
+# Result: Backup menu shows System Image, Vendor Image, Product Image as
+# individual backupable entries — no advbackup needed, no Settings toggle.
 #
 # Source verification:
-#   - OrangeFox partition.cpp: TWFLAG_ADVBACKUP sets Can_Be_Adv_Backed_Up = val
-#   - OrangeFox partitionmanager.cpp Get_Partition_List: backup filter includes
-#     Can_Be_Adv_Backed_Up when fox_adv_backup != 0
-#   - OrangeFox settings.xml: "Show additional partition to backup" toggle
-#   - OrangeFox vars.xml: fox_adv_backup default=0, persist=1
-/system                   ext4     /dev/block/mapper/system                                        flags=display="System";slotselect;backup;advbackup;flashimg;logical
-/system_ext               ext4     /dev/block/mapper/system_ext                                    flags=display="System Ext";slotselect;backup;advbackup;flashimg;logical
-/vendor                   ext4     /dev/block/mapper/vendor                                        flags=display="Vendor";slotselect;backup;advbackup;flashimg;logical
-/product                  ext4     /dev/block/mapper/product                                       flags=display="Product";slotselect;backup;advbackup;flashimg;logical
+#   - partition.cpp: /system_image → Can_Be_Backed_Up=true (line 603-607)
+#   - partition.cpp: /vendor_image → Can_Be_Backed_Up=true (line 608-611)
+#   - Prepare_Super_Volume: only called when Is_Super=true (logical flag)
+#   - Working device tree: muhammadrafiasyddiq/twrp_tree_rock
+/system                   ext4     /dev/block/mapper/system                                        flags=display="System";slotselect;backup=0;logical
+/system_ext               ext4     /dev/block/mapper/system_ext                                    flags=display="System Ext";slotselect;backup=0;logical
+/vendor                   ext4     /dev/block/mapper/vendor                                        flags=display="Vendor";slotselect;backup=0;logical
+/product                  ext4     /dev/block/mapper/product                                       flags=display="Product";slotselect;backup=0;logical
+
+# Individual logical partition backup (image-level dd backup, NOT tar)
+# These appear in Backup menu as: System Image, Vendor Image, Product Image
+/system_image             emmc     /dev/block/mapper/system_a                                      flags=display="System Image";slotselect;backup=1;flashimg
+/vendor_image             emmc     /dev/block/mapper/vendor_a                                      flags=display="Vendor Image";slotselect;backup=1;flashimg
+/product_image            emmc     /dev/block/mapper/product_a                                     flags=display="Product Image";slotselect;backup=1;flashimg
 
 /vendor_boot              emmc     /dev/block/platform/bootdevice/by-name/vendor_boot              flags=display="Vendor Boot";slotselect;backup;flashimg
 /vbmeta                   emmc     /dev/block/platform/bootdevice/by-name/vbmeta                   flags=display="Vbmeta";slotselect;backup;flashimg
@@ -79,7 +81,3 @@
 /storage                  f2fs     /data/media/0                                                   flags=display="Internal Storage";usermrf;backup=1;fsflags="bind";removable
 /external_sd              vfat     /dev/block/mmcblk0p1 /dev/block/mmcblk0 /dev/block/mmcblk1p1    flags=display="Micro SD Card";storage;wipeingui;removable;backup=0
 /usb_otg                  vfat     /dev/block/sda1 /dev/block/sda /dev/block/sdd1                  flags=display="USB-OTG";storage;wipeingui;removable;backup=0
-
-# Allow Flash GSI Image
-# R8 fix: add backup flag so system_image (GSI) can be backed up + restored individually
-/system_image             emmc     /dev/block/mapper/system_a                                      flags=slotselect;backup;flashimg
