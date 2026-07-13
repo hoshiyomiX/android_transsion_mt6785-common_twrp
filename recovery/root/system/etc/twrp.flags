@@ -5,28 +5,27 @@
 #<mnt_point>             <type>    <device>                                                        <mnt_flags and options>
 # User writeable partitions
 /boot                     emmc     /dev/block/platform/bootdevice/by-name/boot                     flags=slotselect;backup;flashimg
-# Super Partitions (dynamic partitions)
-# R8 fix: TWRP partition.cpp sets Can_Be_Backed_Up = Is_Super ? false : true for logical
-# partitions (/system, /system_ext, /vendor, /product). This means logical partitions with
-# the "logical" flag CANNOT be backed up individually — the "backup" flag is overridden to false.
-# Instead, TWRP auto-creates a /super virtual entry that backs up the entire super partition
-# (containing all logical volumes). The /super entry below makes this explicit + ensures the
-# correct block device path is used on MTK devices (by-name/super).
+# Super Partitions (dynamic partitions — individual logical volume backup)
+# R9 fix: User wants individual logical partitions (system, system_ext, vendor, product)
+# to appear as backupable in Backup menu — NOT whole super.img.
 #
-# The "backup" flag on logical partitions is kept for documentation/compatibility — it's
-# effectively ignored when "logical" is also set. Backup of dynamic partitions is done
-# via the /super entry (whole super image) or /system_image (GSI image only).
+# TWRP partition.cpp flow (verified from source):
+#   1. Mount_Point checks set Can_Be_Backed_Up = Is_Super ? false : true for
+#      /system_ext, /product, /odm (lines 482-500). /vendor has empty body (no
+#      assignment, stays at constructor default false).
+#   2. Process_TW_Flags runs AFTER Mount_Point checks (line 625) — the 'backup'
+#      flag sets Can_Be_Backed_Up = val, OVERRIDING the Is_Super default.
+#
+# So 'backup' flag on logical partitions DOES work — it makes them individually
+# backupable via tar (BM_FILES method for ext4 filesystems). The 'logical' flag
+# is kept (needed for /dev/block/mapper/ device resolution + super metadata).
+#
+# R8 was wrong: it added /super entry (whole super image backup) + incorrectly
+# claimed backup flag was ignored. Reverted — user wants individual volumes.
 /system                   ext4     /dev/block/mapper/system                                        flags=display="System";slotselect;backup;flashimg;logical
 /system_ext               ext4     /dev/block/mapper/system_ext                                    flags=display="System Ext";slotselect;backup;flashimg;logical
 /vendor                   ext4     /dev/block/mapper/vendor                                        flags=display="Vendor";slotselect;backup;flashimg;logical
 /product                  ext4     /dev/block/mapper/product                                       flags=display="Product";slotselect;backup;flashimg;logical
-
-# Super partition (whole super image backup — contains system + system_ext + vendor + product)
-# R8 fix: explicit /super entry ensures TWRP shows super as backupable in Backup menu.
-# Without this, the /super virtual entry is only auto-created if Get_Super_Partition()
-# resolves the device path — which may fail on some MTK devices where by-name/super
-# symlink is not present at boot. Explicit entry guarantees backupable behavior.
-/super                    emmc     /dev/block/platform/bootdevice/by-name/super                    flags=display="Super";slotselect;backup;flashimg
 
 /vendor_boot              emmc     /dev/block/platform/bootdevice/by-name/vendor_boot              flags=display="Vendor Boot";slotselect;backup;flashimg
 /vbmeta                   emmc     /dev/block/platform/bootdevice/by-name/vbmeta                   flags=display="Vbmeta";slotselect;backup;flashimg
