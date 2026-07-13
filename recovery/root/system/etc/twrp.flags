@@ -6,26 +6,44 @@
 # User writeable partitions
 /boot                     emmc     /dev/block/platform/bootdevice/by-name/boot                     flags=slotselect;backup;flashimg
 # Super Partitions (dynamic partitions — individual logical volume backup)
-# R9 fix: User wants individual logical partitions (system, system_ext, vendor, product)
-# to appear as backupable in Backup menu — NOT whole super.img.
+# R10 fix: User wants individual logical partitions (system, system_ext, vendor,
+# product) to appear as backupable in Backup menu — NOT whole super.img.
 #
-# TWRP partition.cpp flow (verified from source):
-#   1. Mount_Point checks set Can_Be_Backed_Up = Is_Super ? false : true for
-#      /system_ext, /product, /odm (lines 482-500). /vendor has empty body (no
-#      assignment, stays at constructor default false).
-#   2. Process_TW_Flags runs AFTER Mount_Point checks (line 625) — the 'backup'
-#      flag sets Can_Be_Backed_Up = val, OVERRIDING the Is_Super default.
+# ROOT CAUSE (R9 was wrong — analysis incomplete):
+# TWRP/OrangeFox Prepare_Super_Volume() in partitionmanager.cpp runs AFTER
+# Process_Fstab_Line + Process_TW_Flags. It explicitly calls:
+#   twrpPart->Set_Can_Be_Backed_Up(false);
+#   twrpPart->Set_Can_Be_Wiped(false);
+# for EVERY partition with Is_Super=true (i.e., 'logical' flag set).
+# This OVERRIDES the 'backup' flag — so 'backup' alone does NOT make logical
+# partitions appear in backup menu. R9 incorrectly claimed it did.
 #
-# So 'backup' flag on logical partitions DOES work — it makes them individually
-# backupable via tar (BM_FILES method for ext4 filesystems). The 'logical' flag
-# is kept (needed for /dev/block/mapper/ device resolution + super metadata).
+# SOLUTION (R10): Use OrangeFox's 'advbackup' flag.
+# OrangeFox has a custom Can_Be_Adv_Backed_Up property (set via 'advbackup'
+# fstab flag). The backup list filter in partitionmanager.cpp Get_Partition_List:
+#   if ((Can_Be_Backed_Up || (Can_Be_Adv_Backed_Up && fox_adv_backup != 0))
+#       && !Is_SubPartition && Is_Present)
+# So with 'advbackup' flag + fox_adv_backup setting enabled, logical partitions
+# appear in backup menu despite Can_Be_Backed_Up being false.
 #
-# R8 was wrong: it added /super entry (whole super image backup) + incorrectly
-# claimed backup flag was ignored. Reverted — user wants individual volumes.
-/system                   ext4     /dev/block/mapper/system                                        flags=display="System";slotselect;backup;flashimg;logical
-/system_ext               ext4     /dev/block/mapper/system_ext                                    flags=display="System Ext";slotselect;backup;flashimg;logical
-/vendor                   ext4     /dev/block/mapper/vendor                                        flags=display="Vendor";slotselect;backup;flashimg;logical
-/product                  ext4     /dev/block/mapper/product                                       flags=display="Product";slotselect;backup;flashimg;logical
+# User must enable in Settings → "Show additional partition to backup"
+# (fox_adv_backup variable, default 0, persist=1). Once enabled, the 4 logical
+# partitions will appear individually in Backup menu as tar backup entries.
+#
+# The 'backup' flag is kept for compatibility (harmless — gets overridden by
+# Prepare_Super_Volume, but doesn't hurt). The 'advbackup' flag is the actual
+# mechanism that makes them appear.
+#
+# Source verification:
+#   - OrangeFox partition.cpp: TWFLAG_ADVBACKUP sets Can_Be_Adv_Backed_Up = val
+#   - OrangeFox partitionmanager.cpp Get_Partition_List: backup filter includes
+#     Can_Be_Adv_Backed_Up when fox_adv_backup != 0
+#   - OrangeFox settings.xml: "Show additional partition to backup" toggle
+#   - OrangeFox vars.xml: fox_adv_backup default=0, persist=1
+/system                   ext4     /dev/block/mapper/system                                        flags=display="System";slotselect;backup;advbackup;flashimg;logical
+/system_ext               ext4     /dev/block/mapper/system_ext                                    flags=display="System Ext";slotselect;backup;advbackup;flashimg;logical
+/vendor                   ext4     /dev/block/mapper/vendor                                        flags=display="Vendor";slotselect;backup;advbackup;flashimg;logical
+/product                  ext4     /dev/block/mapper/product                                       flags=display="Product";slotselect;backup;advbackup;flashimg;logical
 
 /vendor_boot              emmc     /dev/block/platform/bootdevice/by-name/vendor_boot              flags=display="Vendor Boot";slotselect;backup;flashimg
 /vbmeta                   emmc     /dev/block/platform/bootdevice/by-name/vbmeta                   flags=display="Vbmeta";slotselect;backup;flashimg
