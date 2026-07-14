@@ -10,11 +10,11 @@
 # of twrp.flags so they appear early in the backup list (right after
 # recovery.fstab entries: Super, metadata, Data, misc, Boot, Cache).
 # ==========================================================================
-/bootloader               emmc     /dev/block/platform/bootdevice/by-name/lk                       flags=display="Bootloader (lk)";slotselect;backup;flashimg
+/bootloader               emmc     /dev/block/platform/bootdevice/by-name/lk                       flags=display="Bootloader";slotselect;backup;flashimg
 /dtbo                     emmc     /dev/block/platform/bootdevice/by-name/dtbo                     flags=display="DTBO";slotselect;backup;flashimg
-/vbmeta                   emmc     /dev/block/platform/bootdevice/by-name/vbmeta                   flags=display="Vbmeta";slotselect;backup;flashimg
-/vbmeta_system            emmc     /dev/block/platform/bootdevice/by-name/vbmeta_system            flags=display="Vbmeta System";slotselect;backup;flashimg
-/vbmeta_vendor            emmc     /dev/block/platform/bootdevice/by-name/vbmeta_vendor            flags=display="Vbmeta Vendor";slotselect;backup;flashimg
+/vbmeta                   emmc     /dev/block/platform/bootdevice/by-name/vbmeta                   flags=display="VBMeta";slotselect;backup;flashimg
+/vbmeta_system            emmc     /dev/block/platform/bootdevice/by-name/vbmeta_system            flags=display="VBMeta System";slotselect;backup;flashimg
+/vbmeta_vendor            emmc     /dev/block/platform/bootdevice/by-name/vbmeta_vendor            flags=display="VBMeta Vendor";slotselect;backup;flashimg
 /vendor_boot              emmc     /dev/block/platform/bootdevice/by-name/vendor_boot              flags=display="Vendor Boot";slotselect;backup;flashimg
 
 # ==========================================================================
@@ -34,11 +34,12 @@
 /product                  ext4     /dev/block/mapper/product                                       flags=display="Product";slotselect;backup=0;logical
 
 # Individual super partition backup (image-level dd backup, NOT tar)
-# These appear in Backup menu as: System Image, System Ext Image, Vendor Image, Product Image
-/system_image             emmc     /dev/block/mapper/system_a                                      flags=display="System Image";slotselect;backup=1;flashimg
-/system_ext_image         emmc     /dev/block/mapper/system_ext_a                                  flags=display="System Ext Image";slotselect;backup=1;flashimg
-/vendor_image             emmc     /dev/block/mapper/vendor_a                                      flags=display="Vendor Image";slotselect;backup=1;flashimg
-/product_image            emmc     /dev/block/mapper/product_a                                     flags=display="Product Image";slotselect;backup=1;flashimg
+# R13 fix: Removed 'Image' from display names to avoid ambiguity with 'gambar'
+# These appear in Backup menu as: System, System Ext, Vendor, Product
+/system_image             emmc     /dev/block/mapper/system_a                                      flags=display="System";slotselect;backup=1;flashimg
+/system_ext_image         emmc     /dev/block/mapper/system_ext_a                                  flags=display="System Ext";slotselect;backup=1;flashimg
+/vendor_image             emmc     /dev/block/mapper/vendor_a                                      flags=display="Vendor";slotselect;backup=1;flashimg
+/product_image            emmc     /dev/block/mapper/product_a                                     flags=display="Product";slotselect;backup=1;flashimg
 
 # ==========================================================================
 # GROUP 3: Other partitions (firmware, sensitive data, modem, storage, etc.)
@@ -46,27 +47,27 @@
 # ==========================================================================
 
 # Firmware
-/expdb                    emmc     /dev/block/platform/bootdevice/by-name/expdb                    flags=display="Expdb";slotselect;backup;flashimg
+/expdb                    emmc     /dev/block/platform/bootdevice/by-name/expdb                    flags=display="EXPDB";slotselect;backup;flashimg
 /logo                     emmc     /dev/block/platform/bootdevice/by-name/logo                     flags=display="Logo";slotselect;backup;flashimg
-/otp                      emmc     /dev/block/platform/bootdevice/by-name/otp                      flags=display="Otp";slotselect;backup;flashimg
-/seccfg                   emmc     /dev/block/platform/bootdevice/by-name/seccfg                   flags=display="Seccfg";slotselect;backup;flashimg
-/spmfw                    emmc     /dev/block/platform/bootdevice/by-name/spmfw                    flags=display="Spmfw";slotselect;backup;flashimg
-/tee                      emmc     /dev/block/platform/bootdevice/by-name/tee                      flags=display="Tee";slotselect;backup;flashimg
+/otp                      emmc     /dev/block/platform/bootdevice/by-name/otp                      flags=display="OTP";slotselect;backup;flashimg
+/seccfg                   emmc     /dev/block/platform/bootdevice/by-name/seccfg                   flags=display="SecCfg";slotselect;backup;flashimg
+/spmfw                    emmc     /dev/block/platform/bootdevice/by-name/spmfw                    flags=display="SPMfw";slotselect;backup;flashimg
+/tee                      emmc     /dev/block/platform/bootdevice/by-name/tee                      flags=display="TEE";slotselect;backup;flashimg
 
 # Sensitive Data
 /metadata                 ext4     /dev/block/platform/bootdevice/by-name/md_udc                   flags=display="Metadata";backup
 /misc                     emmc     /dev/block/platform/bootdevice/by-name/misc                     flags=display="Misc";backup
-/nvcfg                    ext4     /dev/block/platform/bootdevice/by-name/nvcfg                    flags=display="Nvcfg";slotselect;backup;flashimg
+/nvcfg                    ext4     /dev/block/platform/bootdevice/by-name/nvcfg                    flags=display="NvCfg";slotselect;backup;flashimg
 /persist_image            emmc     /dev/block/platform/bootdevice/by-name/persist                  flags=display="Persist";slotselect;backup;flashimg
 /persistent               emmc     /dev/block/platform/bootdevice/by-name/frp                      flags=display="Persistent";slotselect;backup;flashimg
 
 # IMEI and modem related
-/nvdata                   ext4     /dev/block/platform/bootdevice/by-name/nvdata                   flags=display="Nvdata";slotselect;backup;flashimg
-/protect_f                ext4     /dev/block/platform/bootdevice/by-name/protect1                 flags=display="Protect_f";slotselect;backup;flashimg
-/protect_s                ext4     /dev/block/platform/bootdevice/by-name/protect2                 flags=display="Protect_s";slotselect;backup;flashimg
-/nvram                    emmc     /dev/block/platform/bootdevice/by-name/nvram                    flags=display="Nvram";slotselect;backup;flashimg
+/nvdata                   ext4     /dev/block/platform/bootdevice/by-name/nvdata                   flags=display="NvData";slotselect;backup;flashimg
+/protect_f                ext4     /dev/block/platform/bootdevice/by-name/protect1                 flags=display="Protect F";slotselect;backup;flashimg
+/protect_s                ext4     /dev/block/platform/bootdevice/by-name/protect2                 flags=display="Protect S";slotselect;backup;flashimg
+/nvram                    emmc     /dev/block/platform/bootdevice/by-name/nvram                    flags=display="NvRam";slotselect;backup;flashimg
 
 # External & Storage
 /storage                  f2fs     /data/media/0                                                   flags=display="Internal Storage";usermrf;backup=1;fsflags="bind";removable
 /external_sd              vfat     /dev/block/mmcblk0p1 /dev/block/mmcblk0 /dev/block/mmcblk1p1    flags=display="Micro SD Card";storage;wipeingui;removable;backup=0
-/usb_otg                  vfat     /dev/block/sda1 /dev/block/sda /dev/block/sdd1                  flags=display="USB-OTG";storage;wipeingui;removable;backup=0
+/usb_otg                  vfat     /dev/block/sda1 /dev/block/sda /dev/block/sdd1                  flags=display="USB OTG";storage;wipeingui;removable;backup=0
